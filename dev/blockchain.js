@@ -2,59 +2,106 @@ const sha256 = require("sha256");
 
 class Blockchain {
   constructor() {
-    this.chain = [];
-    this.pendingTransactions = [];
+    this._chain = [];
+    this._pendingTransactions = [];
 
-    this.createNewBlock(0, "0", "0");
+    this.createGenisisBlock();
   }
 
-  createNewBlock(nonce, previousBlockHash, hash) {
-    let newBlock = {
-      index: this.chain.length + 1,
-      timestamp: Date.now(),
-      transactions: this.pendingTransactions,
-      nonce,
-      hash,
-      previousBlockHash
+  ledger() {
+    return {
+      chain: this.chain(),
+      pendingTransactions: this.pendingTransactions()
     };
+  }
 
-    this.pendingTransactions = [];
-    this.chain.push(newBlock);
+  createGenisisBlock() {
+    this._chain.push(this.block("0", "0", 0));
+  }
+
+  createNewBlock() {
+    const nonce = this.proofOfWork();
+    const hash = this.hashBlock(
+      this.previousBlockHash(),
+      this.currentBlockData(),
+      nonce
+    );
+
+    const newBlock = this.block(hash, nonce);
+    this._chain.push(newBlock);
+
+    this._pendingTransactions = [];
 
     return newBlock;
   }
 
+  block(previousBlockHash, hash, nonce) {
+    return {
+      index: this.nextIndex(),
+      timestamp: Date.now(),
+      transactions: this.pendingTransactions(),
+      nonce,
+      hash,
+      previousBlockHash
+    };
+  }
+
+  pendingTransactions() {
+    return this._pendingTransactions.slice();
+  }
+
+  chain() {
+    return this._chain.slice();
+  }
+
+  nextIndex() {
+    return this._chain.length + 1;
+  }
+
   lastBlock() {
-    return this.chain[this.chain.length - 1];
+    return this._chain[this._chain.length - 1];
+  }
+
+  previousBlockHash() {
+    return this.lastBlock().hash;
+  }
+
+  currentBlockData() {
+    return {
+      transactions: this.pendingTransactions(),
+      index: this.nextIndex()
+    };
   }
 
   createNewTransaction(amount, sender, recipient) {
-    let transaction = {
+    this._pendingTransactions.push({
       amount,
       sender,
       recipient
-    };
+    });
 
-    this.pendingTransactions.push(transaction);
+    return this.nextIndex();
+  }
 
-    return this.lastBlock()["index"] + 1;
+  proofOfWork() {
+    let nonce = 0;
+    let hash = "";
+    do {
+      hash = this.hashBlock(
+        this.previousBlockHash(),
+        this.currentBlockData(),
+        nonce
+      );
+      nonce++;
+    } while (hash.substring(0, 4) !== "0000");
+
+    return nonce;
   }
 
   hashBlock(previousBlockHash, currentBlockData, nonce) {
     return sha256(
       previousBlockHash + nonce.toString() + JSON.stringify(currentBlockData)
     );
-  }
-
-  proofOfWork(previousBlockHash, currentBlockData) {
-    let nonce = 0;
-    let hash = "";
-    do {
-      hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
-      nonce++;
-    } while (hash.substring(0, 4) !== "0000");
-
-    return nonce;
   }
 }
 
