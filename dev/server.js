@@ -24,7 +24,7 @@ app.post("/transaction", function(req, res) {
 
 app.get("/mine", function(req, res) {
   bitcoin.createNewBlock();
-  res.send(bitcoin);
+  res.send(bitcoin.ledger());
 });
 
 app.listen(3000, function() {

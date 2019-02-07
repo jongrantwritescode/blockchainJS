@@ -8,13 +8,6 @@ class Blockchain {
     this.createGenisisBlock();
   }
 
-  ledger() {
-    return {
-      chain: this.chain(),
-      pendingTransactions: this.pendingTransactions()
-    };
-  }
-
   createGenisisBlock() {
     this._chain.push(this.block("0", "0", 0));
   }
@@ -27,7 +20,7 @@ class Blockchain {
       nonce
     );
 
-    const newBlock = this.block(hash, nonce);
+    const newBlock = this.block(this.previousBlockHash(), hash, nonce);
     this._chain.push(newBlock);
 
     this._pendingTransactions = [];
@@ -44,14 +37,6 @@ class Blockchain {
       hash,
       previousBlockHash
     };
-  }
-
-  pendingTransactions() {
-    return this._pendingTransactions.slice();
-  }
-
-  chain() {
-    return this._chain.slice();
   }
 
   nextIndex() {
@@ -71,6 +56,21 @@ class Blockchain {
       transactions: this.pendingTransactions(),
       index: this.nextIndex()
     };
+  }
+
+  ledger() {
+    return {
+      chain: this.chain(),
+      pendingTransactions: this.pendingTransactions()
+    };
+  }
+
+  chain() {
+    return this._chain.slice();
+  }
+
+  pendingTransactions() {
+    return this._pendingTransactions.slice();
   }
 
   createNewTransaction(amount, sender, recipient) {
